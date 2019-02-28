@@ -1,0 +1,4 @@
+.vscode/
+non-parallel/prime
+processes/prime_process
+threads/prime_threads
