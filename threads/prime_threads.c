@@ -33,7 +33,14 @@ struct PrimeParams {
 
 void* threadFunc(void* params) {
     struct PrimeParams *p = (struct PrimeParams*)params;
-    long nextCand = (*p).first;
+    long nextCand;
+    // If first is even, primeCount will always be 0. We want
+    // to start off with an odd number
+    if ((*p).first % 2 == 0) {
+        nextCand = (*p).first - 1;
+    } else {
+        nextCand = (*p).first;
+    }
     // We create a local instance here so we don't have to block other threads
     // N times. We can just block when we update pCount which is O(1)
     int primeCount = 0;
@@ -61,6 +68,12 @@ int main(void) {
 
     struct timespec start, end;
     clock_gettime(CLOCK_REALTIME, &start);
+    // We'll always start at least one thread. Otherwise
+    // We will run into errors given func signature.
+    // Could probably be overloaded though out of scope.
+    if (num_threads == 0) {
+        num_threads = 1;
+    }
 
     pthread_t* threads = malloc(num_threads * sizeof(pthread_t));
     struct PrimeParams *params;
