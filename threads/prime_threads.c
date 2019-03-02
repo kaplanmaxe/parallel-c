@@ -29,6 +29,7 @@ bool isPrime(long num) {
 
 struct PrimeParams {
     long first, last;
+    int thread_id;
 };
 
 void* threadFunc(void* params) {
@@ -53,33 +54,21 @@ void* threadFunc(void* params) {
     // Critical section to update global pCount
     pthread_mutex_lock(&lock);
     pCount += primeCount;
-    printf("first: %li, last: %li, pCount: %li\n", (*p).first, (*p).last, pCount);
     pthread_mutex_unlock(&lock);
-    
+
+    printf("\x1b[34mthread %i:\x1b[0m found %li prime numbers between %li and %li\n", (*p).thread_id, pCount, (*p).first, (*p).last);
     // Free memory and exit
     free(params);
     pthread_exit(NULL);
 }
-    
-int main(void) {
-    int num_threads;
-    printf("How many threads would you like to spin up?\n");
-    scanf("%i", &num_threads);
 
-    struct timespec start, end;
-    clock_gettime(CLOCK_REALTIME, &start);
-    // We'll always start at least one thread. Otherwise
-    // We will run into errors given func signature.
-    // Could probably be overloaded though out of scope.
-    if (num_threads == 0) {
-        num_threads = 1;
-    }
-
+void spawn(int num_threads) {
     pthread_t* threads = malloc(num_threads * sizeof(pthread_t));
     struct PrimeParams *params;
     long perThread = N / num_threads;
     for (int i = 0; i < num_threads; i++) {
         params = malloc(sizeof(struct PrimeParams));
+        (*params).thread_id = i;
         if (i == 0) {
             (*params).first = 3;
             (*params).last = perThread;
@@ -99,6 +88,22 @@ int main(void) {
         int* result = NULL;
         rc = pthread_join(threads[i], NULL);
     }
+}
+    
+int main(void) {
+    int num_threads;
+    printf("How many threads would you like to spin up?\n");
+    scanf("%i", &num_threads);
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_REALTIME, &start);
+    // We'll always start at least one thread. Otherwise
+    // We will run into errors given func signature.
+    // Could probably be overloaded though out of scope.
+    if (num_threads == 0) {
+        num_threads = 1;
+    }
+    spawn(num_threads);
 
     clock_gettime(CLOCK_REALTIME, &end);
     double time_spent = (end.tv_sec - start.tv_sec) +
